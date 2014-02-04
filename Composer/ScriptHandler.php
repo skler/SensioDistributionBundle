@@ -32,15 +32,22 @@ class ScriptHandler
     public static function buildBootstrap(CommandEvent $event)
     {
         $options = self::getOptions($event);
-        $appDir = $options['symfony-app-dir'];
+        $appsDir = $options['symfony-app-dir'];
 
-        if (!is_dir($appDir)) {
-            echo 'The symfony-app-dir ('.$appDir.') specified in composer.json was not found in '.getcwd().', can not build bootstrap file.'.PHP_EOL;
-
-            return;
+        if (!is_array($appsDir)) {
+            $appsDir = array($appsDir);
         }
 
-        static::executeBuildBootstrap($appDir, $options['process-timeout']);
+        foreach ($appsDir as $appDir) {
+
+            if (!is_dir($appDir)) {
+                echo 'The symfony-app-dir (' . $appDir . ') specified in composer.json was not found in ' . getcwd() . ', can not build bootstrap file.' . PHP_EOL;
+
+                return;
+            }
+
+            static::executeBuildBootstrap($appDir, $options['process-timeout']);
+        }
     }
 
     /**
@@ -53,13 +60,22 @@ class ScriptHandler
         $options = self::getOptions($event);
         $appDir = $options['symfony-app-dir'];
 
-        if (!is_dir($appDir)) {
-            echo 'The symfony-app-dir ('.$appDir.') specified in composer.json was not found in '.getcwd().', can not clear the cache.'.PHP_EOL;
+        $appsDir = $options['symfony-app-dir'];
 
-            return;
+        if (!is_array($appsDir)) {
+            $appsDir = array($appsDir);
         }
 
-        static::executeCommand($event, $appDir, 'cache:clear --no-warmup', $options['process-timeout']);
+        foreach ($appsDir as $appDir) {
+
+            if (!is_dir($appDir)) {
+                echo 'The symfony-app-dir (' . $appDir . ') specified in composer.json was not found in ' . getcwd() . ', can not clear the cache.' . PHP_EOL;
+
+                return;
+            }
+
+            static::executeCommand($event, $appDir, 'cache:clear --no-warmup', $options['process-timeout']);
+        }
     }
 
     /**
@@ -77,8 +93,12 @@ class ScriptHandler
     public static function installAssets(CommandEvent $event)
     {
         $options = self::getOptions($event);
-        $appDir = $options['symfony-app-dir'];
+        $appsDir = $options['symfony-app-dir'];
         $webDir = $options['symfony-web-dir'];
+
+        if (!is_array($appsDir)) {
+            $appsDir = array($appsDir);
+        }
 
         $symlink = '';
         if ($options['symfony-assets-install'] == 'symlink') {
@@ -88,12 +108,14 @@ class ScriptHandler
         }
 
         if (!is_dir($webDir)) {
-            echo 'The symfony-web-dir ('.$webDir.') specified in composer.json was not found in '.getcwd().', can not install assets.'.PHP_EOL;
+            echo 'The symfony-web-dir (' . $webDir . ') specified in composer.json was not found in ' . getcwd() . ', can not install assets.' . PHP_EOL;
 
             return;
         }
 
-        static::executeCommand($event, $appDir, 'assets:install '.$symlink.escapeshellarg($webDir));
+        foreach ($appsDir as $appDir) {
+            static::executeCommand($event, $appDir, 'assets:install ' . $symlink . escapeshellarg($webDir));
+        }
     }
 
     /**
@@ -104,29 +126,36 @@ class ScriptHandler
     public static function installRequirementsFile(CommandEvent $event)
     {
         $options = self::getOptions($event);
-        $appDir = $options['symfony-app-dir'];
+        $appsDir = $options['symfony-app-dir'];
 
-        if (!is_dir($appDir)) {
-            echo 'The symfony-app-dir ('.$appDir.') specified in composer.json was not found in '.getcwd().', can not install the requirements file.'.PHP_EOL;
-
-            return;
+        if (!is_array($appsDir)) {
+            $appsDir = array($appsDir);
         }
 
-        copy(__DIR__.'/../Resources/skeleton/app/SymfonyRequirements.php', $appDir.'/SymfonyRequirements.php');
-        copy(__DIR__.'/../Resources/skeleton/app/check.php', $appDir.'/check.php');
+        foreach ($appsDir as $appDir) {
 
-        $webDir = $options['symfony-web-dir'];
+            if (!is_dir($appDir)) {
+                echo 'The symfony-app-dir (' . $appDir . ') specified in composer.json was not found in ' . getcwd() . ', can not install the requirements file.' . PHP_EOL;
 
-        // if the user has already removed the config.php file, do nothing
-        // as the file must be removed for production use
-        if (is_file($webDir.'/config.php')) {
-            copy(__DIR__.'/../Resources/skeleton/web/config.php', $webDir.'/config.php');
+                return;
+            }
+
+            copy(__DIR__ . '/../Resources/skeleton/app/SymfonyRequirements.php', $appDir . '/SymfonyRequirements.php');
+            copy(__DIR__ . '/../Resources/skeleton/app/check.php', $appDir . '/check.php');
+
+            $webDir = $options['symfony-web-dir'];
+
+            // if the user has already removed the config.php file, do nothing
+            // as the file must be removed for production use
+            if (is_file($webDir . '/config.php')) {
+                copy(__DIR__ . '/../Resources/skeleton/web/config.php', $webDir . '/config.php');
+            }
         }
     }
 
     public static function doBuildBootstrap($appDir)
     {
-        $file = $appDir.'/bootstrap.php.cache';
+        $file = $appDir . '/bootstrap.php.cache';
         if (file_exists($file)) {
             unlink($file);
         }
@@ -179,13 +208,15 @@ namespace { return \$loader; }
     protected static function executeCommand(CommandEvent $event, $appDir, $cmd, $timeout = 300)
     {
         $php = escapeshellarg(self::getPhp());
-        $console = escapeshellarg($appDir.'/console');
+        $console = escapeshellarg($appDir . '/console');
         if ($event->getIO()->isDecorated()) {
             $console .= ' --ansi';
         }
 
-        $process = new Process($php.' '.$console.' '.$cmd, null, null, null, $timeout);
-        $process->run(function ($type, $buffer) { echo $buffer; });
+        $process = new Process($php . ' ' . $console . ' ' . $cmd, null, null, null, $timeout);
+        $process->run(function ($type, $buffer) {
+            echo $buffer;
+        });
         if (!$process->isSuccessful()) {
             throw new \RuntimeException(sprintf('An error occurred when executing the "%s" command.', escapeshellarg($cmd)));
         }
@@ -194,11 +225,13 @@ namespace { return \$loader; }
     protected static function executeBuildBootstrap($appDir, $timeout = 300)
     {
         $php = escapeshellarg(self::getPhp());
-        $cmd = escapeshellarg(__DIR__.'/../Resources/bin/build_bootstrap.php');
+        $cmd = escapeshellarg(__DIR__ . '/../Resources/bin/build_bootstrap.php');
         $appDir = escapeshellarg($appDir);
 
-        $process = new Process($php.' '.$cmd.' '.$appDir, null, null, null, $timeout);
-        $process->run(function ($type, $buffer) { echo $buffer; });
+        $process = new Process($php . ' ' . $cmd . ' ' . $appDir, null, null, null, $timeout);
+        $process->run(function ($type, $buffer) {
+            echo $buffer;
+        });
         if (!$process->isSuccessful()) {
             throw new \RuntimeException('An error occurred when generating the bootstrap file.');
         }
@@ -207,12 +240,12 @@ namespace { return \$loader; }
     protected static function getOptions(CommandEvent $event)
     {
         $options = array_merge(array(
-            'symfony-app-dir' => 'app',
+            'symfony-app-dir' => 'mtvsouth',
             'symfony-web-dir' => 'web',
             'symfony-assets-install' => 'hard'
         ), $event->getComposer()->getPackage()->getExtra());
 
-        $options['symfony-assets-install'] = getenv('SYMFONY_ASSETS_INSTALL') ?: $options['symfony-assets-install'];
+        $options['symfony-assets-install'] = getenv('SYMFONY_ASSETS_INSTALL') ? : $options['symfony-assets-install'];
 
         $options['process-timeout'] = $event->getComposer()->getConfig()->get('process-timeout');
 
