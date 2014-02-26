@@ -1,13 +1,17 @@
 {
     "name": "skler/distribution-bundle",
-    "description": "The base bundle for the Symfony Distributions",
-    "keywords": ["distribution","configuration"],
+    "description": "The base bundle for the Symfony Distributions with multi-kernel support",
+    "keywords": ["distribution","configuration", "multikernel"],
     "type": "symfony-bundle",
     "license": "MIT",
     "authors": [
         {
             "name": "Fabien Potencier",
             "email": "fabien@symfony.com"
+        },
+        {
+            "name": "Mauro Foti,
+            "email": "m.foti@teckhouse.com"
         }
     ],
     "require": {
@@ -19,7 +23,7 @@
     "target-dir": "Sensio/Bundle/DistributionBundle",
     "extra": {
         "branch-alias": {
-            "dev-master": "2.3.x-dev"
+            "dev-master": "master"
         }
     },
     "minimum-stability": "stable"
