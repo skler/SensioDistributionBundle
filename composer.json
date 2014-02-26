@@ -1,5 +1,5 @@
 {
-    "name": "sensio/distribution-bundle",
+    "name": "skler/distribution-bundle",
     "description": "The base bundle for the Symfony Distributions",
     "keywords": ["distribution","configuration"],
     "type": "symfony-bundle",
